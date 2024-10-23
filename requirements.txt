@@ -1,0 +1,12 @@
+torch
+datasets
+transformers
+sentencepiece
+accelerate
+protobuf
+str2bool
+langdetect
+warcio
+news-please
+newspaper4k[all]
+datadiligence
