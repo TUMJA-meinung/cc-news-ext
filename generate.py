@@ -16,7 +16,7 @@ def main(urls = None, limit = None, file = None, where = None):
 	classifier = EnvironmentBool()
 	data = IterableDataset.from_generator(CCNews, gen_kwargs={"urls":urls})
 	data = data.map(lambda entry: {**entry,
-		"category": "environmental hazard" if classifier.classify(entry["maintext"]) else None
+		"category": classifier.classify(entry["maintext"])
 	})
 	if where is not None:
 		data = data.filter(where)
@@ -46,6 +46,5 @@ if __name__ == "__main__":
 		urls = {url.strip() for url in args.urls.readlines()} if args.urls else None,
 		limit = args.limit,
 		file = args.file,
-		where = lambda entry: entry["language"]=="en" and \
-			entry["category"]=="environmental hazard"
+		where = lambda entry: entry["language"]=="en"
 	)

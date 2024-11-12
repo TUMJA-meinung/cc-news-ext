@@ -18,11 +18,10 @@ if sys.version_info.major <= 3 and sys.version_info.minor <= 11:
 DIR=meinung				# your working directory
 mkdir /glob/g01-cache/bgdm/$DIR		# NAS shared with DGX, bgdm allows access
 cd /glob/g01-cache/bgdm/$DIR
-CONTAINER="/glob/g01-cache/container/nvpytorch24.05-py3.simg"
-					# s. ls for options, usage doesn't change image
 srun hostname				# should be tulrbgd-g01.bgd.ed.tum.de (DG
 sbatch --gpus=4 BATCH.sh		# returns job ID with slurm-[ID].out
 squeue					# show current queue
+scancel $ID				# cancel job with $ID
 ```
 
 ## lxhalle.in.tum.de (incompatible)

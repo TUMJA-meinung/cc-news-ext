@@ -4,6 +4,7 @@ from datetime import datetime
 from urllib.parse import quote as urlencode
 
 import urllib3
+from urllib3.exceptions import HTTPError
 import newsplease
 from newsplease import NewsPlease
 import datadiligence as dd # auto-checks if API key available
@@ -22,8 +23,11 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	log = writing stream handle, default sys.stdout
 	"""
 	# get index URLs
-	req = _request("https://index.commoncrawl.org/collinfo.json")
-	indices = _sort(json.loads(_read(req)), balance=balance)
+	try:req = _request("https://index.commoncrawl.org/collinfo.json")
+	except HTTPError as e:
+		print("Failed to fetch indices".format(e), file=log)
+		return
+	indices = _sort(req.json()), balance=balance)
 	for batch in itertools.count():
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
@@ -31,11 +35,11 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			index_url = "{}?url={}&output=json".format(index["cdx-api"],urlencode(url))
 			print("Processing batch {} of {} for {}".format(batch, index["name"], url), file=log)
 			try:req = _request(index_url)
-			except urllib.error.HTTPError as e:
-				print("  └── {}".format(e))
+			except HTTPError as e:
+				print("  └── {}".format(e), file=log)
 				continue
-			if req.getcode() >= 300:
-				print("  └── HTTP Status {}".format(req.getcode()), file=log)
+			if req.status >= 300:
+				print("  └── HTTP Status {}".format(req.status), file=log)
 				continue
 			records = [json.loads(record)
 				for record in _read(req).strip().split("\n")]
@@ -47,10 +51,13 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			# process batch
 			for record in records:
 				offset, length = int(record['offset']), int(record['length'])
-				stream = _request(
+				try:stream = _request(
 					"https://data.commoncrawl.org/{}".format(record["filename"]),
 					headers={"Range":"bytes={}-{}".format(offset, offset+length+1)}
 				)
+				except HTTPError as e:
+					print("  └── {}".format(e), file=log)
+					continue
 				for resrc in ArchiveIterator(stream):
 					if resrc.rec_type != "response": continue
 					uri = resrc.rec_headers.get_header("WARC-Target-URI")
@@ -96,12 +103,13 @@ def _sort(items, balance = "even", by = lambda i: i["from"]):
 	raise ValueError("`balance` must be either 'even', 'asc' or 'desc'")
 
 def _request(url, method='GET', headers=dict()):
-	http = urllib3.PoolManager(retries=Retry(
+	http = urllib3.PoolManager(retries=urllib3.util.Retry(
 		total=3, backoff_factor=0.5, status_forcelist=[429,500,502,503,504]
 	))
-	return http.request(method, url, headers=headers)
+	return http.request(method, url, headers=headers, decode_content=True,
+		preload_content=False)
 
 def _read(response):
-	return response.read().decode(
-		response.info().get_content_charset("utf-8")
-	)
+	try:charset = response.info()['content-type'].split('=')[1]
+	except:charset = 'utf-8'
+	return response.read().decode(charset)
