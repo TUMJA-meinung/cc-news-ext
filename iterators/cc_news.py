@@ -11,6 +11,10 @@ import datadiligence as dd # auto-checks if API key available
 from warcio.archiveiterator import ArchiveIterator
 from langdetect import detect, DetectorFactory
 DetectorFactory.seed = 0
+pool = urllib3.PoolManager(retries=urllib3.util.Retry(
+	# commoncrawl.org/blog/oct-nov-2023-performance-issues
+	total=20, backoff_factor=1, backoff_max=5, status_forcelist=[429,500,502,503,504]
+))
 
 
 def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
@@ -25,7 +29,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	# get index URLs
 	try:req = _request("https://index.commoncrawl.org/collinfo.json")
 	except HTTPError as e:
-		print("Failed to fetch indices".format(e), file=log)
+		print("Failed to fetch indices", e, file=log)
 		return
 	indices = _sort(req.json()), balance=balance)
 	for batch in itertools.count():
@@ -103,10 +107,7 @@ def _sort(items, balance = "even", by = lambda i: i["from"]):
 	raise ValueError("`balance` must be either 'even', 'asc' or 'desc'")
 
 def _request(url, method='GET', headers=dict()):
-	http = urllib3.PoolManager(retries=urllib3.util.Retry(
-		total=3, backoff_factor=0.5, status_forcelist=[429,500,502,503,504]
-	))
-	return http.request(method, url, headers=headers, decode_content=True,
+	return pool.request(method, url, headers=headers, decode_content=True,
 		preload_content=False)
 
 def _read(response):
