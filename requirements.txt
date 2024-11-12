@@ -10,3 +10,4 @@ warcio
 news-please
 newspaper4k[all]
 datadiligence
+urllib3

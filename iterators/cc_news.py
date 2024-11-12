@@ -1,9 +1,9 @@
 import json
 import itertools
 from datetime import datetime
-import urllib
 from urllib.parse import quote as urlencode
 
+import urllib3
 import newsplease
 from newsplease import NewsPlease
 import datadiligence as dd # auto-checks if API key available
@@ -22,7 +22,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	log = writing stream handle, default sys.stdout
 	"""
 	# get index URLs
-	req = urllib.request.urlopen("https://index.commoncrawl.org/collinfo.json")
+	req = _request("https://index.commoncrawl.org/collinfo.json")
 	indices = _sort(json.loads(_read(req)), balance=balance)
 	for batch in itertools.count():
 		# process per URL and year
@@ -30,7 +30,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			# fetch records from index
 			index_url = "{}?url={}&output=json".format(index["cdx-api"],urlencode(url))
 			print("Processing batch {} of {} for {}".format(batch, index["name"], url), file=log)
-			try:req = urllib.request.urlopen(index_url)
+			try:req = _request(index_url)
 			except urllib.error.HTTPError as e:
 				print("  └── {}".format(e))
 				continue
@@ -47,11 +47,9 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			# process batch
 			for record in records:
 				offset, length = int(record['offset']), int(record['length'])
-				stream = urllib.request.urlopen(
-					urllib.request.Request(
-						"https://data.commoncrawl.org/{}".format(record["filename"]),
-						headers={"Range":"bytes={}-{}".format(offset, offset+length+1)}
-					)
+				stream = _request(
+					"https://data.commoncrawl.org/{}".format(record["filename"]),
+					headers={"Range":"bytes={}-{}".format(offset, offset+length+1)}
 				)
 				for resrc in ArchiveIterator(stream):
 					if resrc.rec_type != "response": continue
@@ -96,6 +94,12 @@ def _sort(items, balance = "even", by = lambda i: i["from"]):
 	elif balance == "desc":
 		return reversed(years)
 	raise ValueError("`balance` must be either 'even', 'asc' or 'desc'")
+
+def _request(url, method='GET', headers=dict()):
+	http = urllib3.PoolManager(retries=Retry(
+		total=3, backoff_factor=0.5, status_forcelist=[429,500,502,503,504]
+	))
+	return http.request(method, url, headers=headers)
 
 def _read(response):
 	return response.read().decode(

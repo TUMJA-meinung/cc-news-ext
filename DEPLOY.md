@@ -22,6 +22,7 @@ CONTAINER="/glob/g01-cache/container/nvpytorch24.05-py3.simg"
 					# s. ls for options, usage doesn't change image
 srun hostname				# should be tulrbgd-g01.bgd.ed.tum.de (DG
 sbatch --gpus=4 BATCH.sh		# returns job ID with slurm-[ID].out
+squeue					# show current queue
 ```
 
 ## lxhalle.in.tum.de (incompatible)
