@@ -22,6 +22,7 @@ srun hostname				# should be tulrbgd-g01.bgd.ed.tum.de (DG
 sbatch --gpus=4 BATCH.sh		# returns job ID with slurm-[ID].out
 squeue					# show current queue
 scancel $ID				# cancel job with $ID
+sacct					# show current jobs
 ```
 
 ## lxhalle.in.tum.de (incompatible)

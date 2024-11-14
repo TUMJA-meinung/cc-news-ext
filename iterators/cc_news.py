@@ -62,11 +62,11 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 				except HTTPError as e:
 					print("  └── {}".format(e), file=log)
 					continue
-				for resrc in ArchiveIterator(stream):
+				for resrc in ArchiveIterator(stream, arc2warc=True):
 					if resrc.rec_type != "response": continue
 					uri = resrc.rec_headers.get_header("WARC-Target-URI")
 					# filter for urls
-					if urls is not None and not any(u in uri for u in urls):
+					if urls is not None and uri is not None and not any(u in uri for u in urls):
 						continue
 					# respect crawl opt-outs
 					if not dd.is_allowed(headers = resrc.http_headers.headers): # dd.is_allowed(url=uri) takes much time
