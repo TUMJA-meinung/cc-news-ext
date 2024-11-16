@@ -13,7 +13,8 @@ from langdetect import detect, DetectorFactory
 DetectorFactory.seed = 0
 pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 	# commoncrawl.org/blog/oct-nov-2023-performance-issues
-	total=20, backoff_factor=1, backoff_max=5, status_forcelist=[429,500,502,503,504]
+	# backoff_max = 30min
+	total=20, backoff_factor=1, backoff_max=180, status_forcelist=[429,500,502,503,504]
 ))
 
 
@@ -72,8 +73,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 					if not dd.is_allowed(headers = resrc.http_headers.headers): # dd.is_allowed(url=uri) takes much time
 						continue
 					try:article = NewsPlease.from_warc(resrc)
-					except newsplease.EmptyResponseError:
-						print("  └── No HTML (news-please EmptyResponseError)", file=log)
+					except Exception as e:
+						print("  └── {}: {}".format(type(e).__name__, e), file=log)
 						continue
 					if article.maintext is None:
 						print("  └── No/empty main text", file=log)
