@@ -3,7 +3,7 @@ import sys
 import csv
 import argparse
 import itertools
-from classifiers.environment_bool import DeBERTa as EnvironmentBool
+from classifiers.topics import ComprehendIt as TopicClassifier
 from iterators import CCNews
 
 from datasets import IterableDataset
@@ -13,7 +13,7 @@ FOOTER = "© 2024 The Authors"
 
 
 def main(urls = None, limit = None, file = None, where = None):
-	classifier = EnvironmentBool()
+	classifier = TopicClassifier()
 	data = IterableDataset.from_generator(CCNews, gen_kwargs={"urls":urls})
 	data = data.map(lambda entry: {**entry,
 		"category": classifier.classify(entry["maintext"])

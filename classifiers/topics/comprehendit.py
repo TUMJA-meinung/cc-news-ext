@@ -19,8 +19,8 @@ class ComprehendIt(Classifier):
 			device_map="auto"
 		)
 
-	def classify(self, context):
-		result = classifier(context, TOPICS, multi_label=True)
+	def classify(self, context, topics = TOPICS):
+		result = classifier(context, topics, multi_label=True)
 		return [
 			label
 			for label,score in zip(result["labels"], result["scores"])
