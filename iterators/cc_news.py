@@ -1,7 +1,9 @@
 import json
+import fnmatch
 import itertools
 from datetime import datetime
 from urllib.parse import quote as urlencode
+from urllib.parse import urlparse
 
 import urllib3
 from urllib3.exceptions import HTTPError
@@ -20,6 +22,8 @@ pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 
 def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	"""
+	urls = supports glob patterns for URL paths
+		e.g. nytimes.com/[0-9][0-9][0-9][0-9]/[0-9][0-9]/*
 	batch_size = batch size per URL and year (i.e. URL-year), after which the
 		next URL-year is processed. After processing all i-th batches of
 		each URL-year, the i+1-th batches are fetched. This guarantees a
@@ -36,9 +40,13 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	for batch in itertools.count():
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
+			host = url.split("/",1)[0]
 			# fetch records from index
-			index_url = "{}?url={}&output=json".format(index["cdx-api"],urlencode(url))
-			print("Processing batch {} of {} for {}".format(batch, index["name"], url), file=log)
+			index_url = "{}?url={}&output=json".format(
+				index["cdx-api"],
+				urlencode(host)
+			)
+			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
 			try:req = _request(index_url)
 			except HTTPError as e:
 				print("  └── {}".format(e), file=log)
@@ -46,8 +54,19 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			if req.status >= 300:
 				print("  └── HTTP Status {}".format(req.status), file=log)
 				continue
-			records = [json.loads(record)
-				for record in _read(req).strip().split("\n")]
+			records = [
+				json.loads(record)
+				for record in _read(req).strip().split("\n")
+			]
+			# filter for URL path patterns
+			if "/" in url:
+				records = filter(
+					lambda rec: fnmatch.fnmatch(
+						urlparse(rec["url"]).path,
+						rec["url"].split("/",1)[1]
+					),
+					records
+				)
 			# filter for current batch
 			records = next(itertools.islice(
 				itertools.batched(records, n=batch_size), # batches

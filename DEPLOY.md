@@ -19,7 +19,7 @@ DIR=meinung				# your working directory
 mkdir /glob/g01-cache/bgdm/$DIR		# NAS shared with DGX, bgdm allows access
 cd /glob/g01-cache/bgdm/$DIR
 srun hostname				# should be tulrbgd-g01.bgd.ed.tum.de (DG
-sbatch --gpus=4 BATCH.sh		# returns job ID with slurm-[ID].out
+sbatch --gpus=1 BATCH.sh		# returns job ID with slurm-[ID].out
 squeue					# show current queue
 scancel $ID				# cancel job with $ID
 sacct					# show current jobs

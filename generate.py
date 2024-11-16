@@ -37,7 +37,7 @@ def main(urls = None, limit = None, file = None, where = None):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description = DESC, epilog = FOOTER)
 	parser.add_argument("-l", "--limit", type=int, default=None,
-		help="limit output to n datasets. If a list of urls is given, the limit applies to each url individually.")
+		help="limit output to n datasets")
 	parser.add_argument("-u", "--urls", default="-", type=argparse.FileType('r'),
 		help="file with newline separated urls to filter for ('-' for stdin)")
 	parser.add_argument("file", default=None, help="output file (default: stdout)")

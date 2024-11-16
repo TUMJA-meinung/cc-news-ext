@@ -1,4 +1,4 @@
-from ... import Classifier
+from .. import Classifier
 
 from torch import cuda
 from transformers import pipeline
@@ -16,7 +16,10 @@ class ComprehendIt(Classifier):
 			print("Warning: No GPU available")
 		self.classifier = pipeline("zero-shot-classification",
 			model="knowledgator/comprehend_it-base",
-			device_map="auto"
+			# TODO: github.com/huggingface/transformers/issues/25296
+			# device_map="auto"
+			# instead use:
+			device = "cuda:0" if cuda.is_available() else "cpu"
 		)
 
 	def classify(self, context, topics = TOPICS):
