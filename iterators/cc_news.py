@@ -70,8 +70,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			# filter for current batch
 			records = next(itertools.islice(
 				itertools.batched(records, n=batch_size), # batches
-				batch, None # indices
-			))
+				batch # index
+			), [])
 			# process batch
 			for record in records:
 				offset, length = int(record['offset']), int(record['length'])

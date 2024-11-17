@@ -27,7 +27,8 @@ def main(urls = None, limit = None, file = None, where = None):
 		file = open(sys.stdout.fileno(), 'w', newline='', closefd=False)
 	else:
 		file = open(file, 'w', newline='')
-	first = next(data)
+	try:first = next(data)
+	except StopIteration:pass
 	with file as handle:
 		writer = csv.DictWriter(handle, fieldnames=first.keys())
 		writer.writeheader()
