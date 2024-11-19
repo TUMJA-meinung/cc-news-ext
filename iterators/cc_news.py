@@ -42,14 +42,20 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 		for index,url in itertools.product(indices, urls):
 			host = url.split("/",1)[0]
 			# fetch records from index
-			index_url = "{}?url={}&output=json".format(
+			# @src https://github.com/webrecorder/pywb/wiki/CDX-Server-API#api-reference
+			index_url = "{}?url={}&matchType=prefix&page={}&pageSize={}&fl=url,offset,length,filename&output=json".format(
 				index["cdx-api"],
-				urlencode(host)
+				urlencode(host),
+				batch,
+				batch_size
 			)
 			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
 			try:req = _request(index_url)
 			except HTTPError as e:
 				print("  └── {}".format(e), file=log)
+				continue
+			if req.status == 400:
+				print("  └── No further pages", file=log)
 				continue
 			if req.status >= 300:
 				print("  └── HTTP Status {}".format(req.status), file=log)
@@ -68,10 +74,10 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 					records
 				)
 			# filter for current batch
-			records = next(itertools.islice(
-				itertools.batched(records, n=batch_size), # batches
-				batch # index
-			), [])
+#			records = next(itertools.islice(
+#				itertools.batched(records, n=batch_size), # batches
+#				batch # index
+#			), [])
 			# process batch
 			for record in records:
 				offset, length = int(record['offset']), int(record['length'])
