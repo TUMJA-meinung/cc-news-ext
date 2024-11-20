@@ -12,9 +12,9 @@ DESC = "CSV-Generator for Extended CommonCrawl News Dataset"
 FOOTER = "© 2024 The Authors"
 
 
-def main(urls = None, limit = None, file = None, where = None):
+def main(urls = None, limit = None, file = None, where = None, verbose = False):
 	classifier = TopicClassifier()
-	data = IterableDataset.from_generator(CCNews, gen_kwargs={"urls":urls})
+	data = IterableDataset.from_generator(CCNews, gen_kwargs={"urls":urls, "verbose":verbose})
 	data = data.map(lambda entry: {**entry,
 		"category": classifier.classify(entry["maintext"])
 	})
@@ -37,6 +37,7 @@ def main(urls = None, limit = None, file = None, where = None):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description = DESC, epilog = FOOTER)
+	parser.add_argument("-v", "--verbose", action="store_true")
 	parser.add_argument("-l", "--limit", type=int, default=None,
 		help="limit output to n datasets")
 	parser.add_argument("-u", "--urls", default="-", type=argparse.FileType('r'),
@@ -47,5 +48,6 @@ if __name__ == "__main__":
 		urls = {url.strip() for url in args.urls.readlines()} if args.urls else None,
 		limit = args.limit,
 		file = args.file,
-		where = lambda entry: entry["language"]=="en"
+		where = lambda entry: entry["language"]=="en",
+		verbose = args.v
 	)

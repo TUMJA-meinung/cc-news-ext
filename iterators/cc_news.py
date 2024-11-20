@@ -19,7 +19,7 @@ pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 ))
 
 
-def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
+def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose = False):
 	"""
 	urls = supports regular expressions for URL paths
 		e.g. nytimes.com/\d{4}/\d\d/.*
@@ -41,7 +41,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 		for index,url in itertools.product(indices, urls):
 			host = url.split("/",1)[0]
 			# for filtering
-                        filter_path = "/" in url:
+                        filter_path = "/" in url
 			if filter_path:
 				urlenc_regex_host = urlencode(re.escape(host))
 				urlenc_path = urlencode(url.split("/",1)[1])
@@ -87,6 +87,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			), [])
 			# process batch
 			for record in records:
+				if verbose:
+					print("  └── Fetching {}".format(record["url"]), file=log)
 				offset, length = int(record['offset']), int(record['length'])
 				try:stream = _request(
 					"https://data.commoncrawl.org/{}".format(record["filename"]),
@@ -98,6 +100,9 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 				for resrc in ArchiveIterator(stream, arc2warc=True):
 					if resrc.rec_type != "response": continue
 					uri = resrc.rec_headers.get_header("WARC-Target-URI")
+					# logging
+					if verbose:
+						print("  └── Reading {}".format(uri), file=log)
 					# filter for urls
 					if urls is not None and uri is not None and not any(u in uri for u in urls):
 						continue
