@@ -1,9 +1,8 @@
+import re
 import json
-import fnmatch
 import itertools
 from datetime import datetime
 from urllib.parse import quote as urlencode
-from urllib.parse import urlparse
 
 import urllib3
 from urllib3.exceptions import HTTPError
@@ -15,15 +14,15 @@ from langdetect import detect, DetectorFactory
 DetectorFactory.seed = 0
 pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 	# commoncrawl.org/blog/oct-nov-2023-performance-issues
-	# backoff_max = 30min
-	total=20, backoff_factor=1, backoff_max=180, status_forcelist=[429,500,502,503,504]
+	total=20, backoff_factor=1, backoff_max=180, # backoff_max=30min
+	status_forcelist=[429,500,502,503,504]
 ))
 
 
 def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	"""
-	urls = supports glob patterns for URL paths
-		e.g. nytimes.com/[0-9][0-9][0-9][0-9]/[0-9][0-9]/*
+	urls = supports regular expressions for URL paths
+		e.g. nytimes.com/\d{4}/\d\d/.*
 	batch_size = batch size per URL and year (i.e. URL-year), after which the
 		next URL-year is processed. After processing all i-th batches of
 		each URL-year, the i+1-th batches are fetched. This guarantees a
@@ -36,19 +35,21 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 	except HTTPError as e:
 		print("Failed to fetch indices", e, file=log)
 		return
-	indices = _sort(req.json()), balance=balance)
+	indices = _sort(req.json(), balance=balance)
 	for batch in itertools.count():
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
 			host = url.split("/",1)[0]
 			# fetch records from index
 			# @src https://github.com/webrecorder/pywb/wiki/CDX-Server-API#api-reference
-			index_url = "{}?url={}&matchType=prefix&page={}&pageSize={}&fl=url,offset,length,filename&output=json".format(
+			index_url = "{}?url={}&matchType=prefix&fl=url,offset,length,filename&output=json".format(
 				index["cdx-api"],
-				urlencode(host),
-				batch,
-				batch_size
+				urlencode(host)
 			)
+			if "/" in url: # path filter
+				index_url += "&filter=~url:.*{}$".format(
+					urlencode(url)
+				)
 			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
 			try:req = _request(index_url)
 			except HTTPError as e:
@@ -60,24 +61,21 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 			if req.status >= 300:
 				print("  └── HTTP Status {}".format(req.status), file=log)
 				continue
-			records = [
-				json.loads(record)
-				for record in _read(req).strip().split("\n")
-			]
+			records = map(
+				lambda record: json.loads(record),
+				_read(req).strip().split("\n")
+			)
 			# filter for URL path patterns
 			if "/" in url:
 				records = filter(
-					lambda rec: fnmatch.fnmatch(
-						urlparse(rec["url"]).path,
-						rec["url"].split("/",1)[1]
-					),
+					lambda rec: re.match(url, rec["url"]),
 					records
 				)
 			# filter for current batch
-#			records = next(itertools.islice(
-#				itertools.batched(records, n=batch_size), # batches
-#				batch # index
-#			), [])
+			records = next(itertools.islice(
+				itertools.batched(records, n=batch_size), # batches
+				batch # index
+			), [])
 			# process batch
 			for record in records:
 				offset, length = int(record['offset']), int(record['length'])
