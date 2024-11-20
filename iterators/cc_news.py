@@ -40,23 +40,29 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
 			host = url.split("/",1)[0]
+			# for filtering
+                        filter_path = "/" in url:
+			if filter_path:
+				urlenc_regex_host = urlencode(re.escape(host))
+				urlenc_path = urlencode(url.split("/",1)[1])
 			# fetch records from index
 			# @src https://github.com/webrecorder/pywb/wiki/CDX-Server-API#api-reference
 			index_url = "{}?url={}&matchType=prefix&fl=url,offset,length,filename&output=json".format(
 				index["cdx-api"],
 				urlencode(host)
 			)
-			if "/" in url: # path filter
-				index_url += "&filter=~url:.*{}$".format(
-					urlencode(url)
+			if filter_path:
+				index_url += "&filter=~url:.*{}/{}$".format(
+					urlenc_regex_host,
+					urlenc_path
 				)
 			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
 			try:req = _request(index_url)
 			except HTTPError as e:
 				print("  └── {}".format(e), file=log)
 				continue
-			if req.status == 400:
-				print("  └── No further pages", file=log)
+			if req.status == 404:
+				print("  └── No crawls for filter", file=log)
 				continue
 			if req.status >= 300:
 				print("  └── HTTP Status {}".format(req.status), file=log)
@@ -66,9 +72,12 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None):
 				_read(req).strip().split("\n")
 			)
 			# filter for URL path patterns
-			if "/" in url:
+			if filter_path:
 				records = filter(
-					lambda rec: re.match(url, rec["url"]),
+					lambda rec: re.match(
+						urlenc_regex_host+"/"+urlenc_path,
+						rec["url"]
+					),
 					records
 				)
 			# filter for current batch
