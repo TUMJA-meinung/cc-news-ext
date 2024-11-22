@@ -57,6 +57,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 					urlenc_path
 				)
 			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
+			if verbose:
+				print("  └── Index: {}".format(index_url), file=log)
 			try:req = _request(index_url)
 			except HTTPError as e:
 				print("  └── {}".format(e), file=log)
@@ -80,6 +82,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 					),
 					records
 				)
+			if verbose:
+				print("  └── Batch {} of {} records".format(batch, len(records)), file=log)
 			# filter for current batch
 			records = next(itertools.islice(
 				itertools.batched(records, n=batch_size), # batches
