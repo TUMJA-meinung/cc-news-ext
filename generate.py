@@ -13,6 +13,8 @@ FOOTER = "© 2024 The Authors"
 
 
 def main(urls = None, limit = None, file = None, where = None, verbose = False):
+	if verbose:
+		print("Verbose logging mode")
 	classifier = TopicClassifier()
 	data = IterableDataset.from_generator(CCNews, gen_kwargs={"urls":urls, "verbose":verbose})
 	data = data.map(lambda entry: {**entry,
@@ -49,5 +51,5 @@ if __name__ == "__main__":
 		limit = args.limit,
 		file = args.file,
 		where = lambda entry: entry["language"]=="en",
-		verbose = args.v
+		verbose = args.verbose
 	)

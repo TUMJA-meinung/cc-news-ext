@@ -69,9 +69,10 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 			if req.status >= 300:
 				print("  └── HTTP Status {}".format(req.status), file=log)
 				continue
+			lines = _read(req).splitlines()
 			records = map(
 				lambda record: json.loads(record),
-				_read(req).strip().split("\n")
+				lines
 			)
 			# filter for URL path patterns
 			if filter_path:
@@ -83,7 +84,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 					records
 				)
 			if verbose:
-				print("  └── Batch {} of {} records".format(batch, len(records)), file=log)
+				print("  └── Batch {} of {} records".format(batch, len(lines)), file=log)
 			# filter for current batch
 			records = next(itertools.islice(
 				itertools.batched(records, n=batch_size), # batches
