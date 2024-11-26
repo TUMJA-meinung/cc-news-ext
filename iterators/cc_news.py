@@ -78,8 +78,9 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 			if filter_path:
 				records = filter(
 					lambda rec: re.match(
-						urlenc_regex_host+"/"+urlenc_path,
-						rec["url"]
+						".*"+urlenc_regex_host+"/"+urlenc_path+"$",
+						rec["url"],
+						re.IGNORECASE
 					),
 					records
 				)
