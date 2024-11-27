@@ -43,8 +43,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 			# for filtering
                         filter_path = "/" in url
 			if filter_path:
-				urlenc_regex_host = urlencode(re.escape(host))
-				urlenc_path = urlencode(url.split("/",1)[1])
+				regex_host = re.escape(host)
+				path = url.split("/",1)[1]
 			# fetch records from index
 			# @src https://github.com/webrecorder/pywb/wiki/CDX-Server-API#api-reference
 			index_url = "{}?url={}&matchType=prefix&fl=url,offset,length,filename&output=json".format(
@@ -53,8 +53,8 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 			)
 			if filter_path:
 				index_url += "&filter=~url:.*{}/{}$".format(
-					urlenc_regex_host,
-					urlenc_path
+					urlencode(regex_host),
+					urlencode(path)
 				)
 			print("Processing batch {} of {} for {}".format(batch, index["name"], host), file=log)
 			if verbose:
@@ -78,7 +78,7 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 			if filter_path:
 				records = filter(
 					lambda rec: re.match(
-						".*"+urlenc_regex_host+"/"+urlenc_path+"$",
+						".*"+regex_host+"/"+path+"$",
 						rec["url"],
 						re.IGNORECASE
 					),

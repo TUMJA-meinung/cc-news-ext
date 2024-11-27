@@ -11,14 +11,14 @@ chmod +x generate.py
 ### Preparation
 To use the same hostnames as in CC-News, download `https://huggingface.co/datasets/vblagoje/cc_news?sql_console=true&sql=SELECT+DISTINCT+domain+FROM+train%3B` into `query_result.parquet`.
 ```sh
-python3 -c 'import pandas as pd; pd.read_parquet("query_result.parquet").to_csv("urls.csv", index=False, header=False)'
-sed 's#^www\.##g' -i urls.csv
+python3 -c 'import pandas as pd; pd.read_parquet("query_result.parquet").to_csv("urls.txt", index=False, header=False)'
+sed 's#^www\.##g' -i urls.txt
 ```
 
 ### Generation
 Recommendation: 8GB RAM, 1-4 GPUs (depending on used classifier)
 ```sh
-./generate.py --urls urls.csv dataset.csv
+./generate.py --urls urls.txt dataset.csv
 ```
 For further information see `python3 generate.py -h`.
 
