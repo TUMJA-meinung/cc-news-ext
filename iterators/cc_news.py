@@ -19,7 +19,7 @@ pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 ))
 
 
-def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose = False):
+def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False):
 	"""
 	urls = supports regular expressions for URL paths
 		e.g. nytimes.com/\d{4}/\d\d/.*
@@ -85,11 +85,16 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 					records
 				)
 			if verbose:
-				print("  └── Batch {} of {} records".format(batch, len(lines)), file=log)
+				records = list(records)
+				print("  └── Batch {} of {} records".format(
+					batch,
+					len(lines)
+				), file=log)
 			# filter for current batch
 			records = next(itertools.islice(
 				itertools.batched(records, n=batch_size), # batches
-				batch # index
+				batch, # index
+				batch+1
 			), [])
 			# process batch
 			for record in records:
@@ -110,11 +115,13 @@ def CCNews(urls = None, balance = "even", batch_size = 10, log = None, verbose =
 					if verbose:
 						print("  └── Reading {}".format(uri), file=log)
 					# filter for urls
-					if urls is not None and uri is not None and not any(u in uri for u in urls):
+					if uri is not None and not host in uri:
 						continue
 					# respect crawl opt-outs
 					if not dd.is_allowed(headers = resrc.http_headers.headers): # dd.is_allowed(url=uri) takes much time
 						continue
+					if verbose:
+						print("  └── Crawl not disallowed".format(uri), file=log)
 					try:article = NewsPlease.from_warc(resrc)
 					except Exception as e:
 						print("  └── {}: {}".format(type(e).__name__, e), file=log)
