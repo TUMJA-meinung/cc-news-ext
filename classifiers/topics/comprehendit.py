@@ -23,7 +23,7 @@ class ComprehendIt(Classifier):
 		)
 
 	def classify(self, context, topics = TOPICS):
-		result = classifier(context, topics, multi_label=True)
+		result = self.classifier(context, topics, multi_label=True)
 		return [
 			label
 			for label,score in zip(result["labels"], result["scores"])
