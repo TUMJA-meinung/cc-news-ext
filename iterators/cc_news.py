@@ -129,8 +129,8 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 					if article.maintext is None:
 						print("  └── No/empty main text", file=log)
 						continue
-					if article.language is None and text != "":
-						article.language = detect(text)
+					if article.language is None and article.maintext != "":
+						article.language = detect(article.maintext)
 					yield vars(article)
 				stream.close()
 
