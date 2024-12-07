@@ -113,7 +113,7 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 					uri = resrc.rec_headers.get_header("WARC-Target-URI")
 					# logging
 					if verbose:
-						print("  └── Reading {}".format(uri), file=log)
+						print("    └── Reading {}".format(uri), file=log)
 					# filter for urls
 					if uri is not None and not host in uri:
 						continue
@@ -121,16 +121,17 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 					if not dd.is_allowed(headers = resrc.http_headers.headers): # dd.is_allowed(url=uri) takes much time
 						continue
 					if verbose:
-						print("  └── Crawl not disallowed".format(uri), file=log)
-					try:article = NewsPlease.from_warc(resrc)
+						print("    └── Crawl not disallowed".format(uri), file=log)
+					try:
+						article = NewsPlease.from_warc(resrc)
+						if article.maintext is None:
+							print("    └── No/empty main text", file=log)
+							continue
+						if article.language is None and article.maintext != "":
+							article.language = detect(article.maintext)
 					except Exception as e:
-						print("  └── {}: {}".format(type(e).__name__, e), file=log)
+						print("    └── {}: {}".format(type(e).__name__, e), file=log)
 						continue
-					if article.maintext is None:
-						print("  └── No/empty main text", file=log)
-						continue
-					if article.language is None and article.maintext != "":
-						article.language = detect(article.maintext)
 					yield vars(article)
 				stream.close()
 
