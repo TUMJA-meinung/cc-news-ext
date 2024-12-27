@@ -41,7 +41,7 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 		for index,url in itertools.product(indices, urls):
 			host = url.split("/",1)[0]
 			# for filtering
-                        filter_path = "/" in url
+			filter_path = "/" in url
 			if filter_path:
 				regex_host = re.escape(host)
 				path = url.split("/",1)[1]
