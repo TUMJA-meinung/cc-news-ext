@@ -19,7 +19,7 @@ pool = urllib3.PoolManager(retries=urllib3.util.Retry(
 ))
 
 
-def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False):
+def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False, start_batch = 0, start_index = None, start_url = None):
 	"""
 	urls = supports regular expressions for URL paths
 		e.g. nytimes.com/\d{4}/\d\d/.*
@@ -29,6 +29,10 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 		balanced representation of URLs and years when fetching only the
 		first x items.
 	log = writing stream handle, default sys.stdout
+	verbose = verbose logs
+	start_batch = batch to start from (for continuing a crawl with same conditions)
+	start_index = index to start from (for continuing a crawl with same conditions)
+	start_url = URL to start from (for continuing a crawl with same conditions)
 	"""
 	# get index URLs
 	try:req = _request("https://index.commoncrawl.org/collinfo.json")
@@ -36,9 +40,19 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False)
 		print("Failed to fetch indices", e, file=log)
 		return
 	indices = _sort(req.json(), balance=balance)
-	for batch in itertools.count():
+	for batch in itertools.count(start = start_batch):
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
+			if start_index is not None: # start from start_index
+				if index == start_index:
+					start_index = None
+				else:
+					continue
+			if start_url is not None: # start from start_url
+				if url == start_url:
+					start_url = None
+				else:
+					continue
 			host = url.split("/",1)[0]
 			# for filtering
 			filter_path = "/" in url
