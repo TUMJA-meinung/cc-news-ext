@@ -35,21 +35,29 @@ def CCNews(urls, balance = "even", batch_size = 10, log = None, verbose = False,
 	start_url = URL to start from (for continuing a crawl with same conditions)
 	"""
 	# get index URLs
+	if verbose:
+		print("Fetching indices", file=log)
 	try:req = _request("https://index.commoncrawl.org/collinfo.json")
 	except HTTPError as e:
 		print("Failed to fetch indices", e, file=log)
 		return
+	if verbose:
+		print("Ordering indices", file=log)
 	indices = _sort(req.json(), balance=balance)
 	for batch in itertools.count(start = start_batch):
 		# process per URL and year
 		for index,url in itertools.product(indices, urls):
 			if start_index is not None: # start from start_index
-				if index == start_index:
+				if index["id"] == start_index:
+					if verbose:
+						print("Fast forward to index:", start_index, file=log)
 					start_index = None
 				else:
 					continue
 			if start_url is not None: # start from start_url
 				if url == start_url:
+					if verbose:
+						print("Fast forward to URL:", start_url, file=log)
 					start_url = None
 				else:
 					continue
