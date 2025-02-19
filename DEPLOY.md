@@ -21,6 +21,8 @@ cd /glob/g01-cache/bgdm/$DIR
 srun hostname				# should be tulrbgd-g01.bgd.ed.tum.de (DG
 sbatch --gpus=1 BATCH.sh		# returns job ID with slurm-[ID].out
 squeue					# show current queue
+srun --jobid=$ID nvidia-smi		# show current GPU utilization
+sacct -j $ID --format=JobID,JobName,State,Elapsed	# show elapsed time
 scancel $ID				# cancel job with $ID
 sacct					# show current jobs
 ```
